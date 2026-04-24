@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pkl
+data/raw/
+output/
+*.pyc
