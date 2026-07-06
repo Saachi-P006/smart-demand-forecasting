@@ -46,6 +46,32 @@ def calculate_risks(df: pd.DataFrame) -> pd.DataFrame:
                 return "🟢 OK"
 
         df["risk_severity"] = df.apply(classify_severity, axis=1)
+
+        # ── FIX (alert-fatigue bug): numeric severity score ────────
+        # Previously EVERY stockout row was labeled "Critical" with no way to
+        # tell a shortfall of 1 unit from a shortfall of 500 units, so alerts
+        # couldn't be ranked or triaged — everything looked equally urgent.
+        # severity_score = size of the shortfall (demand - inventory), scaled
+        # by volatility so a volatile, high-shortfall product ranks above a
+        # stable one with the same raw gap. Higher = more urgent.
+        shortfall = (df[demand_col] - df[inventory_col]).clip(lower=0)
+        volatility_mult = 1 + df.get("volatility_score", pd.Series(0, index=df.index)).fillna(0)
+        df["severity_score"] = (shortfall * volatility_mult).round(2)
+
+        # ── Severity tiers (for triage — replaces the old binary flag) ──
+        def severity_tier(score):
+            if score <= 0:
+                return "None"
+            elif score < 5:
+                return "Low"
+            elif score < 20:
+                return "Medium"
+            elif score < 50:
+                return "High"
+            else:
+                return "Critical"
+
+        df["severity_tier"] = df["severity_score"].apply(severity_tier)
     else:
         print(f"[risk] '{inventory_col}' column not found – risk columns set to unknown.")
         df["stockout_risk"]      = False

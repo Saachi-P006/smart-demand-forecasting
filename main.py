@@ -14,7 +14,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT)
 
 from data.load_data          import load_all_data, get_core_tables
-from data.processing         import preprocess_data
+from data.processing         import preprocess_data, compute_true_lag_features
 from features.feature_engineering import create_features
 from features.business_rules import apply_demand_adjustments, calculate_inventory_recommendation
 from models.train            import train_model, FEATURE_COLS
@@ -45,6 +45,12 @@ def run_pipeline():
      web_traffic, price_history, forecast_review) = get_core_tables(data)
 
     print(f"  Sales rows: {len(sales):,}  |  Processing in chunks of {CHUNK_SIZE:,}")
+
+    # FIX (accuracy bug): compute REAL lag_7/lag_14/rolling_avg_7 from actual
+    # sales history ONCE, up front, per (store_id, product_id) — instead of
+    # the old synthetic version derived from the same row's units_sold.
+    print("\n── Computing leak-free lag/rolling features from real history ──")
+    sales = compute_true_lag_features(sales)
 
     # ── STEP 2 & 3: Train on a sample first ───────────────────────
     print("\n── STEP 2-3: Building training sample ────────────────────")
@@ -95,6 +101,11 @@ def run_pipeline():
         "date", "city", "store_id", "product_id",
         "predicted_units", "adjusted_demand",
         "recommended_inventory", "reason_flags",
+        # severity fields — needed by the reviewer dashboard so it can
+        # triage by risk instead of forcing a row-by-row review of
+        # every single prediction (see utils/risk.py for how these
+        # are computed).
+        "severity_tier", "severity_score", "stockout_risk", "overstock_risk",
     ]
 
     # Open output files (write header on first chunk, append after)
