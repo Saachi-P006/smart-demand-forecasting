@@ -101,11 +101,6 @@ def run_pipeline():
         "date", "city", "store_id", "product_id",
         "predicted_units", "adjusted_demand",
         "recommended_inventory", "reason_flags",
-        # severity fields — needed by the reviewer dashboard so it can
-        # triage by risk instead of forcing a row-by-row review of
-        # every single prediction (see utils/risk.py for how these
-        # are computed).
-        "severity_tier", "severity_score", "stockout_risk", "overstock_risk",
     ]
 
     # Open output files (write header on first chunk, append after)

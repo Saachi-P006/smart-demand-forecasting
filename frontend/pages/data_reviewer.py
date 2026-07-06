@@ -304,44 +304,13 @@ def inject_css():
 @st.cache_data(ttl=300, show_spinner=False)
 def load_forecast() -> pd.DataFrame:
     try:
-        needed = {
-            "product_id","store_id","date","city","predicted_units","adjusted_demand",
-            "reason_flags","severity_tier","severity_score","stockout_risk","overstock_risk",
-        }
+        needed = {"product_id","store_id","date","city","predicted_units","adjusted_demand","reason_flags"}
         df = pd.read_csv(FORECAST_CSV, usecols=lambda c: c in needed)
         if "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.date
-        # Older forecast CSVs (pre-severity fields) won't have these columns —
-        # default them so the rest of the dashboard can rely on them existing.
-        if "severity_tier" not in df.columns:
-            df["severity_tier"] = "Unknown"
-        if "severity_score" not in df.columns:
-            df["severity_score"] = 0.0
         return df
     except Exception:
         return pd.DataFrame()
-
-
-# Rows in these tiers with no meaningful reason flag are the "nothing to see
-# here" bucket — a human reviewer gains nothing by clicking Approve on each
-# one individually. This bucket is what "Bulk Approve Low-Risk" clears.
-# Rows in these tiers are the "nothing to see here" bucket for stockout/
-# overstock risk — a human reviewer gains nothing by clicking Approve on
-# each one individually. This bucket is what "Bulk Approve Low-Risk" clears.
-# NOTE: "Unknown" is deliberately excluded — that means severity couldn't be
-# computed (e.g. inventory data missing), which is not the same as "safe."
-SAFE_TO_AUTO_APPROVE_TIERS = {"None", "Low"}
-
-SEVERITY_ORDER = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "None": 4, "Unknown": 5}
-
-
-def is_low_risk(row_flags: str, severity_tier: str) -> bool:
-    """A row is 'low risk' (safe to bulk-approve) purely based on its
-    stockout/overstock severity tier. Reason flags like 'Weekend Effect' or
-    'High Volatility' are explanatory context (they fire on most rows) and
-    are NOT risk signals on their own — severity_tier already accounts for
-    the things that actually matter (shortfall size, volatility-adjusted)."""
-    return severity_tier in SAFE_TO_AUTO_APPROVE_TIERS
 
 
 @st.cache_data(ttl=15, show_spinner=False)
@@ -387,41 +356,6 @@ def save_review(pid, sid, date, predicted, adjusted, status, notes, reviewer):
         return False
 
 
-def bulk_save_reviews(rows, status, reviewer):
-    """Write many reviews in a single read/write pass instead of one CSV
-    rewrite per row — used by the bulk-approve action so clearing thousands
-    of low-risk rows doesn't mean thousands of disk writes.
-
-    `rows` is a list of (product_id, store_id, date, predicted_units) tuples.
-    """
-    if not rows:
-        return 0
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    new_rows = [{
-        "product_id": pid, "store_id": sid, "date": str(dt),
-        "predicted_units": pred, "adjusted_units": pred,
-        "status": status, "reviewer_notes": "Bulk-approved: low risk, no flags",
-        "reviewed_by": reviewer, "reviewed_at": now,
-    } for pid, sid, dt, pred in rows]
-
-    try:
-        df = pd.read_csv(REVIEW_CSV) if os.path.exists(REVIEW_CSV) else pd.DataFrame()
-        if not df.empty and all(c in df.columns for c in ["product_id","store_id","date"]):
-            keys = {(str(p), str(s), str(d)) for p, s, d, _ in rows}
-            mask = df.apply(
-                lambda r: (str(r["product_id"]), str(r["store_id"]), str(r["date"])) in keys,
-                axis=1
-            )
-            df = df[~mask]
-        df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
-        df.to_csv(REVIEW_CSV, index=False)
-        load_reviews.clear()
-        return len(new_rows)
-    except Exception as e:
-        st.error(f"Bulk save failed: {e}")
-        return 0
-
-
 def apply_filters(df, filters):
     if df.empty:
         return df
@@ -464,19 +398,6 @@ def status_badge(status: str) -> str:
     }
     cls, label = cls_map.get(status, ("s-pending", "⏳ Pending"))
     return f'<span class="status-badge {cls}">{label}</span>'
-
-
-def severity_badge(tier: str) -> str:
-    cls_map = {
-        "Critical": ("flag-spike", "🔴 Critical"),
-        "High":     ("flag-spike", "🟠 High"),
-        "Medium":   ("flag-event", "🟡 Medium"),
-        "Low":      ("flag-drop",  "🔵 Low"),
-        "None":     ("flag-other", "⚪ None"),
-        "Unknown":  ("flag-other", "— Unknown"),
-    }
-    cls, label = cls_map.get(str(tier), ("flag-other", "— Unknown"))
-    return f'<span class="flag-badge {cls}">{label}</span>'
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -536,34 +457,17 @@ def _render_table(df, reviews, filters):
         st.error("No predicted_units / adjusted_demand column found in forecast CSV.")
         return
 
-    # Status + severity filters
-    col_f1, col_f2, col_f3 = st.columns([2, 2, 3])
-    with col_f1:
+    # Status filter
+    col_f, _ = st.columns([2, 5])
+    with col_f:
         status_filter = st.selectbox(
             "Filter by status",
             ["All", "⏳ Pending", "✅ Approved", "✏️ Edited", "❌ Rejected"],
             key="sf_sel"
         )
-    with col_f2:
-        severity_filter = st.selectbox(
-            "Filter by severity",
-            ["All", "🔴 Critical", "🟠 High", "🟡 Medium", "🔵 Low", "⚪ None"],
-            key="sev_sel",
-            help="Sorted with the highest-risk predictions first by default, "
-                 "so you review what actually matters before anything else."
-        )
-    with col_f3:
-        st.markdown(
-            '<div style="font-size:0.78rem;color:#64748b;margin-top:1.9rem;">'
-            'Rows are ranked by risk — Critical/High first.</div>',
-            unsafe_allow_html=True
-        )
-
-    has_severity = "severity_tier" in df.columns
 
     # Build display list
     display_rows = []
-    low_risk_pending = []   # (pid, sid, dt, predicted) — for bulk approve
     for row_idx, row in enumerate(df.itertuples(index=False)):
         pid    = str(getattr(row, "product_id", "N/A"))
         sid    = str(getattr(row, "store_id",   "N/A"))
@@ -571,57 +475,16 @@ def _render_table(df, reviews, filters):
         key    = (pid, sid, dt)
         rev    = reviews.get(key, {})
         status = rev.get("status", "pending")
-        tier   = str(getattr(row, "severity_tier", "Unknown")) if has_severity else "Unknown"
-        score  = float(getattr(row, "severity_score", 0) or 0) if has_severity else 0.0
-        flags  = str(getattr(row, "reason_flags", "") or "")
 
         if status_filter != "All":
             target = status_filter.split(" ", 1)[1].lower()
             if status != target:
                 continue
-        if severity_filter != "All":
-            target_tier = severity_filter.split(" ", 1)[1]
-            if tier != target_tier:
-                continue
-
-        display_rows.append((row_idx, row, rev, key, status, tier, score))
-
-        if status == "pending" and is_low_risk(flags, tier):
-            pred_val = getattr(row, fc_col, 0)
-            low_risk_pending.append((pid, sid, dt, pred_val))
+        display_rows.append((row_idx, row, rev, key, status))
 
     if not display_rows:
         st.info("No predictions match the current filter.")
         return
-
-    # Rank by risk: Critical/High/Medium/Low/None, and within a tier by
-    # severity_score descending — this is what makes 1.8M rows tractable,
-    # a reviewer works top-down and the stuff that matters is always first.
-    display_rows.sort(key=lambda r: (SEVERITY_ORDER.get(r[5], 5), -r[6]))
-
-    # ── Bulk approve: the "nothing to see here" bucket ──
-    if low_risk_pending:
-        bulk_c1, bulk_c2 = st.columns([3, 5])
-        with bulk_c1:
-            st.markdown(
-                f'<div style="font-size:0.82rem;color:#065f46;background:#f0fdf4;'
-                f'border:1px solid #6ee7b7;border-radius:8px;padding:0.5rem 0.8rem;'
-                f'margin-bottom:0.6rem;">'
-                f'✅ <b>{len(low_risk_pending):,}</b> pending rows in this filter have '
-                f'None/Low stockout-risk severity — safe to clear in one click. '
-                f'(Reason flags may still show for context, e.g. "Weekend Effect" — '
-                f'those aren\'t risk signals on their own.)</div>',
-                unsafe_allow_html=True
-            )
-        with bulk_c2:
-            if st.button(
-                f"⚡ Bulk Approve {len(low_risk_pending):,} Low-Risk Rows",
-                key="bulk_approve_low_risk"
-            ):
-                n = bulk_save_reviews(low_risk_pending, "approved", reviewer=st.session_state.get("username",""))
-                if n:
-                    st.success(f"Bulk-approved {n:,} low-risk rows.")
-                    st.rerun()
 
     # Pagination
     ROWS_PER_PAGE = 15
@@ -647,7 +510,6 @@ def _render_table(df, reviews, filters):
           <th>Location</th>
           <th>Date</th>
           <th>Predicted Demand</th>
-          <th>Risk</th>
           <th>Reason Flags</th>
           <th>Status</th>
           <th>Actions</th>
@@ -658,7 +520,7 @@ def _render_table(df, reviews, filters):
     """, unsafe_allow_html=True)
 
     # ── Rows ── (rendered with Streamlit columns for interactive buttons)
-    for i, (row_idx, row, rev, key, status, tier, score) in enumerate(page_rows):
+    for i, (row_idx, row, rev, key, status) in enumerate(page_rows):
         pid   = getattr(row, "product_id", "N/A")
         sid   = getattr(row, "store_id",   "N/A")
         dt    = getattr(row, "date",        "N/A")
@@ -695,9 +557,8 @@ def _render_table(df, reviews, filters):
           <div style="width:11%; font-size:0.78rem; color:#64748b;">{dt}</div>
           <div style="width:12%; font-family:'DM Mono',monospace; font-size:0.85rem;
                       font-weight:700; color:#0f172a;">{pred_disp}</div>
-          <div style="width:8%;">{severity_badge(tier)}</div>
-          <div style="width:22%;">{parse_flags(flags)}</div>
-          <div style="width:8%;">{status_badge(status)}</div>
+          <div style="width:28%;">{parse_flags(flags)}</div>
+          <div style="width:10%;">{status_badge(status)}</div>
           <!-- actions rendered below via Streamlit columns -->
         </div>
         """, unsafe_allow_html=True)

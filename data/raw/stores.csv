@@ -1,0 +1,51 @@
+store_id,store_name,city,state,store_type,store_size_sqft
+1,WS_Store_0,New York,USA,Outlet,7201
+2,WS_Store_1,New York,USA,Outlet,16772
+3,WS_Store_2,Chicago,USA,Flagship,6448
+4,WS_Store_3,Los Angeles,USA,Flagship,5918
+5,WS_Store_4,New York,USA,Outlet,5511
+6,WS_Store_5,Chicago,USA,Outlet,14280
+7,WS_Store_6,Los Angeles,USA,Outlet,2178
+8,WS_Store_7,Chicago,USA,Outlet,7655
+9,WS_Store_8,Chicago,USA,Flagship,14348
+10,WS_Store_9,New York,USA,Flagship,6690
+11,WS_Store_10,Los Angeles,USA,Outlet,5764
+12,WS_Store_11,Los Angeles,USA,Outlet,16366
+13,WS_Store_12,Chicago,USA,Flagship,6805
+14,WS_Store_13,New York,USA,Outlet,14323
+15,WS_Store_14,Los Angeles,USA,Flagship,7222
+16,WS_Store_15,Chicago,USA,Flagship,11500
+17,WS_Store_16,New York,USA,Outlet,8413
+18,WS_Store_17,New York,USA,Flagship,9354
+19,WS_Store_18,Los Angeles,USA,Flagship,3107
+20,WS_Store_19,Los Angeles,USA,Flagship,15268
+21,WS_Store_20,New York,USA,Flagship,3094
+22,WS_Store_21,Los Angeles,USA,Flagship,10514
+23,WS_Store_22,Los Angeles,USA,Flagship,13910
+24,WS_Store_23,Chicago,USA,Flagship,8781
+25,WS_Store_24,Los Angeles,USA,Outlet,15704
+26,WS_Store_25,San Francisco,USA,Flagship,14520
+27,WS_Store_26,Dallas,USA,Outlet,6340
+28,WS_Store_27,Seattle,USA,Flagship,9850
+29,WS_Store_28,Miami,USA,Outlet,11200
+30,WS_Store_29,New York,USA,Flagship,8400
+31,WS_Store_30,Chicago,USA,Outlet,5600
+32,WS_Store_31,Los Angeles,USA,Flagship,16700
+33,WS_Store_32,San Francisco,USA,Outlet,4500
+34,WS_Store_33,Dallas,USA,Flagship,13200
+35,WS_Store_34,Seattle,USA,Outlet,7800
+36,WS_Store_35,Miami,USA,Flagship,10500
+37,WS_Store_36,New York,USA,Outlet,9200
+38,WS_Store_37,Chicago,USA,Flagship,15400
+39,WS_Store_38,Los Angeles,USA,Outlet,6700
+40,WS_Store_39,San Francisco,USA,Flagship,11800
+41,WS_Store_40,Dallas,USA,Outlet,5100
+42,WS_Store_41,Seattle,USA,Flagship,14100
+43,WS_Store_42,Miami,USA,Outlet,8300
+44,WS_Store_43,New York,USA,Flagship,12600
+45,WS_Store_44,Chicago,USA,Outlet,7400
+46,WS_Store_45,Los Angeles,USA,Flagship,16200
+47,WS_Store_46,San Francisco,USA,Outlet,5900
+48,WS_Store_47,Dallas,USA,Flagship,10900
+49,WS_Store_48,Seattle,USA,Outlet,6800
+50,WS_Store_49,Miami,USA,Flagship,13700

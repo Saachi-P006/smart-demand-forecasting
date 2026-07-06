@@ -1,0 +1,12 @@
+.env
+venv/
+venv_old/
+__pycache__/
+*.pyc
+.pytest_cache/
+output/*.csv
+models/*.pkl
+models/metrics.json
+.git/
+.gitignore
+*.zip

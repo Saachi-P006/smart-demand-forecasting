@@ -39,6 +39,43 @@ def _rename_value_col(df: pd.DataFrame, new_name: str,
     return df.drop_duplicates(subset=key_cols)
 
 
+def compute_true_lag_features(sales):
+    """
+    Compute REAL historical lag/rolling features per (store_id, product_id),
+    using only past data (no leakage from the current row's units_sold).
+
+    FIX (accuracy bug): the previous version derived lag_7 / lag_14 /
+    rolling_avg_7 directly from the SAME ROW's units_sold (the training
+    target), which let the model trivially invert a near-linear formula
+    and report ~99.96% accuracy. That number was not real. This function
+    replaces it with genuine time-shifted features:
+        lag_7          = units_sold from 7 days earlier for that store/product
+        lag_14         = units_sold from 14 days earlier
+        rolling_avg_7  = mean of the PRIOR 7 days (shifted by 1 so today's
+                         value is never included)
+    Rows too early in a series to have 7/14 days of history get filled with
+    that store/product's overall mean (a standard cold-start fallback).
+    """
+    df = sales.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.sort_values(["store_id", "product_id", "date"])
+
+    grp = df.groupby(["store_id", "product_id"])["units_sold"]
+    df["lag_7"] = grp.shift(7)
+    df["lag_14"] = grp.shift(14)
+    df["rolling_avg_7"] = grp.transform(lambda s: s.shift(1).rolling(7).mean())
+
+    for col in ["lag_7", "lag_14", "rolling_avg_7"]:
+        df[col] = df[col].fillna(df.groupby(["store_id", "product_id"])["units_sold"].transform("mean"))
+        df[col] = df[col].fillna(df["units_sold"].mean())
+        df[col] = df[col].round(2)
+
+    print(f"[processing] Computed leak-free lag_7/lag_14/rolling_avg_7 for "
+          f"{df.groupby(['store_id','product_id']).ngroups:,} store/product series.")
+
+    return df
+
+
 def preprocess_data(
     sales, feature_store, promotions, events,
     products, stores, weather, supplier,
@@ -203,18 +240,31 @@ def preprocess_data(
                       .mean().reset_index())
         df = df.merge(vol_agg, on=["store_id", "product_id"], how="left")
 
-    # ── Synthetic lag / rolling features from feature_store_score ─────────────
-    if "feature_store_score" in df.columns:
-        score = df["feature_store_score"].fillna(0)
-        base  = df.get("units_sold", pd.Series(1, index=df.index)).fillna(1)
-        df["lag_7"]         = (base * (0.8 + score * 0.4)).round(2)
-        df["lag_14"]        = (base * (0.7 + score * 0.3)).round(2)
-        df["rolling_avg_7"] = (base * (0.85 + score * 0.3)).round(2)
-    else:
-        base = df.get("units_sold", pd.Series(0, index=df.index)).fillna(0)
-        df["lag_7"]         = base
-        df["lag_14"]        = base
-        df["rolling_avg_7"] = base
+    # ── Lag / rolling features ──────────────────────────────────────────────
+    # FIX (accuracy/leakage bug): lag_7 / lag_14 / rolling_avg_7 are now
+    # computed upstream by compute_true_lag_features() from real sales
+    # history (see main.py), so `sales` already carries genuine values here.
+    # We only fall back to a synthetic approximation if, for some reason,
+    # those columns weren't precomputed (e.g. this function is called
+    # directly on raw data without running that step first).
+    if "lag_7" not in df.columns or "lag_14" not in df.columns or "rolling_avg_7" not in df.columns:
+        print("[processing] WARNING – real lag features not found upstream; "
+              "falling back to synthetic approximation (run "
+              "compute_true_lag_features() on sales before this step to fix).")
+        if "feature_store_score" in df.columns:
+            score = df["feature_store_score"].fillna(0)
+            base  = df.get("units_sold", pd.Series(1, index=df.index)).fillna(1)
+            fallback = {
+                "lag_7": (base * (0.8 + score * 0.4)).round(2),
+                "lag_14": (base * (0.7 + score * 0.3)).round(2),
+                "rolling_avg_7": (base * (0.85 + score * 0.3)).round(2),
+            }
+        else:
+            base = df.get("units_sold", pd.Series(0, index=df.index)).fillna(0)
+            fallback = {"lag_7": base, "lag_14": base, "rolling_avg_7": base}
+        for col, vals in fallback.items():
+            if col not in df.columns:
+                df[col] = vals
 
     # ── Synthetic web traffic columns from web_signal_score ───────────────────
     if "web_signal_score" in df.columns:

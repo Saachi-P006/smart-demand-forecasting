@@ -4,3 +4,5 @@ __pycache__/
 data/processed/
 output/*.csv
 models/*.pkl
+data/raw/demand_forecast.csv
+data/raw/sales_history.csv

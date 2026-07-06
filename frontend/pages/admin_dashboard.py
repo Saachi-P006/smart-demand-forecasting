@@ -49,11 +49,14 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import os
+import json
 from frontend.components.sidebar import render_sidebar
 from frontend.components.email_alerts import start_hourly_alerts, send_critical_alerts
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "output")
 RAW_DIR    = os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw")
+MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "models")
+METRICS_JSON = os.path.join(MODELS_DIR, "metrics.json")
 
 # FIX G: correct path — this is what data_reviewer.py → save_review() writes
 REVIEWER_EDITS_CSV = os.path.join(OUTPUT_DIR, "reviewer_edits.csv")
@@ -251,6 +254,23 @@ def inject_css():
     [data-testid="stSidebar"] * {{ color:{TEXT_C} !important; font-family:'Sora',sans-serif !important; }}
     [data-testid="stSidebar"] .pg-header,
     [data-testid="stSidebar"] label {{ color:{TEXT_C} !important; }}
+    /* FIX: Model Performance panel text was blending into the background —
+       st.caption / st.markdown headers / st.success / st.info aren't covered
+       by the rules above, so they fell back to theme defaults (light gray on
+       light background in dark mode). Force explicit colors instead. */
+    [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * {{
+        color:{MUTED_C} !important;
+    }}
+    .main h1, .main h2, .main h3, .main h4, .main h5,
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4 {{
+        color:{TEXT_C} !important; font-family:'Sora',sans-serif !important;
+    }}
+    [data-testid="stAlert"], [data-testid="stAlert"] * {{
+        color:{TEXT_C} !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -929,12 +949,113 @@ def render_business_insights(filters):
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 
+def render_model_performance():
+    """
+    NEW: Model Performance panel.
+
+    Surfaces, in the UI, the results of two fixes made to the training
+    pipeline (see models/train.py):
+      1. A leakage bug fix — lag/rolling features used to be derived from
+         the same row's target, giving an unrealistic ~99.96% "accuracy".
+         Real historical lag features now give honest metrics instead.
+      2. A time-based train/test split (train on earlier dates, test on
+         later ones) plus a naive baseline comparison, so viewers can see
+         XGBoost is actually earning its complexity rather than assuming it.
+
+    Reads models/metrics.json, written by train_model() after each training
+    run. If that file doesn't exist yet (model hasn't been trained), shows
+    a friendly message instead of crashing.
+    """
+    st.markdown("## 🧠 Model Performance")
+
+    if not os.path.exists(METRICS_JSON):
+        st.info(
+            "No training metrics found yet. Run `python main.py` "
+            "(with RETRAIN=True) to train the model and generate this report."
+        )
+        return
+
+    with open(METRICS_JSON) as f:
+        m = json.load(f)
+
+    st.caption(
+        f"Last trained: {m.get('trained_at', 'unknown')}  •  "
+        f"Time-based split at **{m.get('split_date', '—')}**  •  "
+        f"{m.get('train_rows', 0):,} train rows / {m.get('test_rows', 0):,} test rows"
+    )
+
+    xgb_m = m.get("xgboost", {})
+    base_m = m.get("baseline") or {}
+    improvement = m.get("improvement_over_baseline_%")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("XGBoost MAE", xgb_m.get("MAE", "—"),
+                 delta=(f"-{improvement}% vs baseline" if improvement else None),
+                 delta_color="normal")
+    col2.metric("XGBoost RMSE", xgb_m.get("RMSE", "—"))
+    col3.metric("XGBoost MAPE", f"{xgb_m.get('MAPE_%', '—')}%")
+
+    if base_m:
+        st.markdown("#### XGBoost vs. Naive Baseline")
+        st.caption("Baseline = assume today's sales equal the trailing 7-day average "
+                    "(rolling_avg_7). A model should beat this to justify its complexity.")
+
+        compare_df = pd.DataFrame({
+            "Metric": ["MAE", "RMSE", "MAPE_%"],
+            "XGBoost": [xgb_m.get("MAE"), xgb_m.get("RMSE"), xgb_m.get("MAPE_%")],
+            "Naive Baseline": [base_m.get("MAE"), base_m.get("RMSE"), base_m.get("MAPE_%")],
+        })
+        fig = go.Figure()
+        fig.add_trace(go.Bar(name="XGBoost", x=compare_df["Metric"], y=compare_df["XGBoost"],
+                              marker_color=TEAL))
+        fig.add_trace(go.Bar(name="Naive Baseline", x=compare_df["Metric"], y=compare_df["Naive Baseline"],
+                              marker_color=GRAY_C))
+        fig.update_layout(
+            template="plotly_white",
+            barmode="group", plot_bgcolor=PLOT_BG, paper_bgcolor=PAPER_BG,
+            height=350,
+            font=dict(color=TEXT_C, family="Sora, sans-serif", size=13),
+            legend=dict(orientation="h", y=1.15, font=dict(color=TEXT_C, size=13),
+                        bgcolor="rgba(0,0,0,0)"),
+            xaxis=dict(tickfont=dict(color=TEXT_C, size=12),
+                       title_font=dict(color=TEXT_C), color=TEXT_C),
+            yaxis=dict(tickfont=dict(color=TEXT_C, size=12),
+                       title_font=dict(color=TEXT_C), color=TEXT_C),
+        )
+        st.plotly_chart(fig, use_container_width=True, theme=None)
+
+        if improvement is not None:
+            st.success(f"✅ XGBoost improves on the naive baseline by **{improvement}%** (MAE).")
+
+    importance = m.get("feature_importance") or {}
+    if importance:
+        st.markdown("#### Top Feature Importances")
+        imp_df = pd.DataFrame(
+            {"feature": list(importance.keys()), "importance": list(importance.values())}
+        ).sort_values("importance", ascending=True)
+        fig2 = go.Figure(go.Bar(
+            x=imp_df["importance"], y=imp_df["feature"], orientation="h",
+            marker_color=TEAL
+        ))
+        fig2.update_layout(
+            template="plotly_white",
+            plot_bgcolor=PLOT_BG, paper_bgcolor=PAPER_BG, height=450,
+            font=dict(color=TEXT_C, family="Sora, sans-serif", size=13),
+            xaxis=dict(title="Importance", tickfont=dict(color=TEXT_C, size=12),
+                       title_font=dict(color=TEXT_C), color=TEXT_C),
+            yaxis=dict(title="", tickfont=dict(color=TEXT_C, size=12),
+                       title_font=dict(color=TEXT_C), color=TEXT_C),
+        )
+        st.plotly_chart(fig2, use_container_width=True, theme=None)
+
+
 def show_admin_dashboard():
     inject_css()
     start_hourly_alerts()
-    nav_items = ["📊 Overview", "📈 Forecast", "⚠️ Insights & Alerts", "📊 Business Insights"]
+    nav_items = ["📊 Overview", "📈 Forecast", "⚠️ Insights & Alerts", "📊 Business Insights", "🧠 Model Performance"]
     selected, filters = render_sidebar(nav_items, default="📊 Overview")
     if   selected == "📊 Overview":           render_overview(filters)
     elif selected == "📈 Forecast":           render_forecast(filters)
     elif selected == "⚠️ Insights & Alerts":  render_insights(filters)
     elif selected == "📊 Business Insights":  render_business_insights(filters)
+    elif selected == "🧠 Model Performance":  render_model_performance()

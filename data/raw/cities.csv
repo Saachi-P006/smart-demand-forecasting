@@ -1,0 +1,301 @@
+city_id,city_name,state
+1,San Jose,California
+2,Indianapolis,Indiana
+3,Virginia Beach,Virginia
+4,Charlotte,North Carolina
+5,Colorado Springs,Colorado
+6,Columbus,Ohio
+7,Long Beach,California
+8,Kansas City,Missouri
+9,San Francisco,California
+10,Columbus,Ohio
+11,Baltimore,Maryland
+12,Seattle,Washington
+13,Charlotte,North Carolina
+14,Phoenix,Arizona
+15,Los Angeles,California
+16,Detroit,Michigan
+17,Raleigh,North Carolina
+18,Nashville,Tennessee
+19,Louisville,Kentucky
+20,Boston,Massachusetts
+21,Louisville,Kentucky
+22,Albuquerque,New Mexico
+23,Virginia Beach,Virginia
+24,Portland,Oregon
+25,Chicago,Illinois
+26,Fresno,California
+27,San Diego,California
+28,Nashville,Tennessee
+29,San Jose,California
+30,Houston,Texas
+31,Chicago,Illinois
+32,Portland,Oregon
+33,Atlanta,Georgia
+34,Indianapolis,Indiana
+35,Detroit,Michigan
+36,El Paso,Texas
+37,Philadelphia,Pennsylvania
+38,New York,New York
+39,Oklahoma City,Oklahoma
+40,Detroit,Michigan
+41,New York,New York
+42,Houston,Texas
+43,Indianapolis,Indiana
+44,San Diego,California
+45,Atlanta,Georgia
+46,Colorado Springs,Colorado
+47,Oklahoma City,Oklahoma
+48,Tucson,Arizona
+49,Seattle,Washington
+50,Omaha,Nebraska
+51,Phoenix,Arizona
+52,Denver,Colorado
+53,Long Beach,California
+54,Fresno,California
+55,Baltimore,Maryland
+56,San Jose,California
+57,San Diego,California
+58,Indianapolis,Indiana
+59,Oklahoma City,Oklahoma
+60,Colorado Springs,Colorado
+61,Raleigh,North Carolina
+62,Las Vegas,Nevada
+63,Baltimore,Maryland
+64,Raleigh,North Carolina
+65,Virginia Beach,Virginia
+66,Colorado Springs,Colorado
+67,Albuquerque,New Mexico
+68,Raleigh,North Carolina
+69,Tucson,Arizona
+70,Denver,Colorado
+71,Colorado Springs,Colorado
+72,San Diego,California
+73,Colorado Springs,Colorado
+74,Boston,Massachusetts
+75,Fort Worth,Texas
+76,Philadelphia,Pennsylvania
+77,Fresno,California
+78,San Francisco,California
+79,Fort Worth,Texas
+80,Mesa,Arizona
+81,New York,New York
+82,Los Angeles,California
+83,Omaha,Nebraska
+84,San Diego,California
+85,New York,New York
+86,Indianapolis,Indiana
+87,Memphis,Tennessee
+88,Memphis,Tennessee
+89,El Paso,Texas
+90,Phoenix,Arizona
+91,Baltimore,Maryland
+92,San Jose,California
+93,Memphis,Tennessee
+94,Fresno,California
+95,Mesa,Arizona
+96,Kansas City,Missouri
+97,Philadelphia,Pennsylvania
+98,Albuquerque,New Mexico
+99,Nashville,Tennessee
+100,Los Angeles,California
+101,Albuquerque,New Mexico
+102,Washington,District of Columbia
+103,Indianapolis,Indiana
+104,Omaha,Nebraska
+105,Portland,Oregon
+106,Oklahoma City,Oklahoma
+107,Las Vegas,Nevada
+108,Milwaukee,Wisconsin
+109,Colorado Springs,Colorado
+110,New York,New York
+111,Raleigh,North Carolina
+112,Las Vegas,Nevada
+113,Denver,Colorado
+114,Dallas,Texas
+115,Memphis,Tennessee
+116,Nashville,Tennessee
+117,Houston,Texas
+118,Sacramento,California
+119,Albuquerque,New Mexico
+120,Baltimore,Maryland
+121,Long Beach,California
+122,Houston,Texas
+123,Nashville,Tennessee
+124,Washington,District of Columbia
+125,Boston,Massachusetts
+126,San Diego,California
+127,Philadelphia,Pennsylvania
+128,Long Beach,California
+129,Mesa,Arizona
+130,Jacksonville,Florida
+131,Tucson,Arizona
+132,San Diego,California
+133,Philadelphia,Pennsylvania
+134,Phoenix,Arizona
+135,Fort Worth,Texas
+136,New York,New York
+137,Austin,Texas
+138,Nashville,Tennessee
+139,Long Beach,California
+140,Dallas,Texas
+141,Nashville,Tennessee
+142,Portland,Oregon
+143,Las Vegas,Nevada
+144,Kansas City,Missouri
+145,Sacramento,California
+146,Charlotte,North Carolina
+147,New York,New York
+148,Mesa,Arizona
+149,Milwaukee,Wisconsin
+150,Jacksonville,Florida
+151,Detroit,Michigan
+152,Phoenix,Arizona
+153,Atlanta,Georgia
+154,Tucson,Arizona
+155,Las Vegas,Nevada
+156,Houston,Texas
+157,San Francisco,California
+158,Memphis,Tennessee
+159,Memphis,Tennessee
+160,Milwaukee,Wisconsin
+161,Fort Worth,Texas
+162,Mesa,Arizona
+163,Portland,Oregon
+164,Mesa,Arizona
+165,Baltimore,Maryland
+166,Sacramento,California
+167,Sacramento,California
+168,Jacksonville,Florida
+169,Oklahoma City,Oklahoma
+170,Albuquerque,New Mexico
+171,Kansas City,Missouri
+172,Fresno,California
+173,Virginia Beach,Virginia
+174,San Francisco,California
+175,Fresno,California
+176,Albuquerque,New Mexico
+177,Philadelphia,Pennsylvania
+178,Baltimore,Maryland
+179,Raleigh,North Carolina
+180,Miami,Florida
+181,Fort Worth,Texas
+182,Columbus,Ohio
+183,Albuquerque,New Mexico
+184,San Antonio,Texas
+185,Philadelphia,Pennsylvania
+186,Seattle,Washington
+187,Houston,Texas
+188,Fort Worth,Texas
+189,Philadelphia,Pennsylvania
+190,San Antonio,Texas
+191,Milwaukee,Wisconsin
+192,San Antonio,Texas
+193,Chicago,Illinois
+194,Houston,Texas
+195,Atlanta,Georgia
+196,Columbus,Ohio
+197,San Diego,California
+198,San Jose,California
+199,Albuquerque,New Mexico
+200,Boston,Massachusetts
+201,Washington,District of Columbia
+202,El Paso,Texas
+203,Mesa,Arizona
+204,San Francisco,California
+205,Indianapolis,Indiana
+206,Mesa,Arizona
+207,Indianapolis,Indiana
+208,Oklahoma City,Oklahoma
+209,Indianapolis,Indiana
+210,Detroit,Michigan
+211,San Diego,California
+212,Atlanta,Georgia
+213,Austin,Texas
+214,Chicago,Illinois
+215,Los Angeles,California
+216,Columbus,Ohio
+217,San Antonio,Texas
+218,San Diego,California
+219,Denver,Colorado
+220,Tucson,Arizona
+221,Tucson,Arizona
+222,Jacksonville,Florida
+223,Colorado Springs,Colorado
+224,Mesa,Arizona
+225,Boston,Massachusetts
+226,Columbus,Ohio
+227,San Jose,California
+228,Detroit,Michigan
+229,Atlanta,Georgia
+230,Los Angeles,California
+231,New York,New York
+232,Boston,Massachusetts
+233,El Paso,Texas
+234,Milwaukee,Wisconsin
+235,Los Angeles,California
+236,Sacramento,California
+237,Austin,Texas
+238,Las Vegas,Nevada
+239,Dallas,Texas
+240,New York,New York
+241,Atlanta,Georgia
+242,Oklahoma City,Oklahoma
+243,Raleigh,North Carolina
+244,Baltimore,Maryland
+245,Oklahoma City,Oklahoma
+246,Louisville,Kentucky
+247,Indianapolis,Indiana
+248,Nashville,Tennessee
+249,San Francisco,California
+250,Denver,Colorado
+251,Chicago,Illinois
+252,Memphis,Tennessee
+253,Detroit,Michigan
+254,San Diego,California
+255,Sacramento,California
+256,Louisville,Kentucky
+257,Louisville,Kentucky
+258,Boston,Massachusetts
+259,Kansas City,Missouri
+260,Las Vegas,Nevada
+261,Boston,Massachusetts
+262,New York,New York
+263,Phoenix,Arizona
+264,Virginia Beach,Virginia
+265,Indianapolis,Indiana
+266,Long Beach,California
+267,Boston,Massachusetts
+268,Atlanta,Georgia
+269,Fresno,California
+270,Columbus,Ohio
+271,Columbus,Ohio
+272,Atlanta,Georgia
+273,Colorado Springs,Colorado
+274,Omaha,Nebraska
+275,Jacksonville,Florida
+276,Boston,Massachusetts
+277,Dallas,Texas
+278,Raleigh,North Carolina
+279,Sacramento,California
+280,Houston,Texas
+281,Milwaukee,Wisconsin
+282,Los Angeles,California
+283,Chicago,Illinois
+284,Oklahoma City,Oklahoma
+285,Los Angeles,California
+286,Austin,Texas
+287,Dallas,Texas
+288,El Paso,Texas
+289,Fresno,California
+290,Detroit,Michigan
+291,Kansas City,Missouri
+292,Fresno,California
+293,Las Vegas,Nevada
+294,Sacramento,California
+295,Colorado Springs,Colorado
+296,Fort Worth,Texas
+297,San Diego,California
+298,Portland,Oregon
+299,Detroit,Michigan
+300,Nashville,Tennessee

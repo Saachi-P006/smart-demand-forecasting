@@ -2,9 +2,9 @@
 frontend/components/email_alerts.py
 Sends critical stockout alerts to admin via Gmail SMTP.
 
-Reads from your .env file:
-    EMAIL_USER=saachipatwari@gmail.com
-    EMAIL_PASS=dgyl fgfg wqyv bpio     ← spaces are automatically stripped
+Reads from your .env file (see .env.example for the expected format):
+    EMAIL_USER=your_email@gmail.com
+    EMAIL_PASS=your_app_password       ← spaces are automatically stripped
     SMTP_SERVER=smtp.gmail.com
     SMTP_PORT=587
     EMAIL_RECIPIENT=someone@email.com  (optional — defaults to EMAIL_USER)
@@ -41,14 +41,32 @@ ALERTS_CSV = os.path.join(OUTPUT_DIR, "alerts_output.csv")
 _thread_started = False
 
 
+# FIX (alert-fatigue bug): previously every stockout row was labeled
+# "Critical" with no ranking, so the email just dumped an arbitrary top-20
+# slice with no regard for how severe each shortfall actually was. Now we
+# sort by severity_score (see utils/risk.py) and only send rows that clear
+# a genuine urgency bar, capped at a sane batch size.
+MAX_ALERTS_PER_EMAIL = 20
+MIN_SEVERITY_TIER_TO_ALERT = {"Critical", "High"}  # skip Low/Medium noise
+
+
 def _load_critical_alerts() -> pd.DataFrame:
     try:
         df = pd.read_csv(ALERTS_CSV)
-        if "risk_level" in df.columns:
-            return df[df["risk_level"].str.contains("Stockout", na=False, case=False)]
+
+        if "severity_tier" in df.columns:
+            df = df[df["severity_tier"].isin(MIN_SEVERITY_TIER_TO_ALERT)]
+        elif "risk_level" in df.columns:
+            df = df[df["risk_level"].str.contains("Stockout", na=False, case=False)]
         elif "alert_type" in df.columns:
-            return df[df["alert_type"].str.contains("Stockout", na=False, case=False)]
-        return df.head(50)
+            df = df[df["alert_type"].str.contains("Stockout", na=False, case=False)]
+        else:
+            df = df.head(50)
+
+        if "severity_score" in df.columns:
+            df = df.sort_values("severity_score", ascending=False)
+
+        return df
     except Exception as e:
         print(f"[email_alerts] Could not load alerts CSV: {e}")
         return pd.DataFrame()
@@ -57,7 +75,8 @@ def _load_critical_alerts() -> pd.DataFrame:
 # (ONLY showing changed parts — rest remains same)
 
 def _build_email_html(df: pd.DataFrame, sent_at: str) -> str:
-    top = df.head(20)
+    # Already sorted by severity_score descending in _load_critical_alerts
+    top = df.head(MAX_ALERTS_PER_EMAIL)
     rows_html = ""
 
     for _, row in top.iterrows():
@@ -67,6 +86,7 @@ def _build_email_html(df: pd.DataFrame, sent_at: str) -> str:
         inv     = row.get("inventory_on_hand", row.get("current_inventory", "N/A"))
         demand  = row.get("adjusted_demand", row.get("predicted_units", "N/A"))
         flags   = row.get("reason_flags", "")
+        tier    = row.get("severity_tier", "")
 
         rows_html += f"""
         <tr style="background:#ffffff;">
@@ -75,12 +95,13 @@ def _build_email_html(df: pd.DataFrame, sent_at: str) -> str:
             <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;color:#1e293b">{city}</td>
             <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;color:#dc2626;font-weight:700">{inv}</td>
             <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;color:#059669;font-weight:600">{demand}</td>
+            <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#b91c1c">{tier}</td>
             <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#334155">{flags}</td>
         </tr>
         """
 
-    overflow = (f'<div style="padding:12px 0;font-size:12px;color:#64748b">... and {len(df)-20} more. Log in to view all.</div>'
-                if len(df) > 20 else "")
+    overflow = (f'<div style="padding:12px 0;font-size:12px;color:#64748b">... and {len(df)-MAX_ALERTS_PER_EMAIL} more lower-priority alerts not shown here. Log in to view all.</div>'
+                if len(df) > MAX_ALERTS_PER_EMAIL else "")
 
     return f"""<!DOCTYPE html>
 <html>
@@ -88,7 +109,7 @@ def _build_email_html(df: pd.DataFrame, sent_at: str) -> str:
   <div style="max-width:700px;margin:auto;background:white;border-radius:10px;padding:20px">
     
     <h2 style="color:#0f172a;">🔴 Stockout Alert</h2>
-    <p style="color:#334155;">{len(df)} products at risk • {sent_at}</p>
+    <p style="color:#334155;">{len(df)} High/Critical products at risk (sorted by severity) • {sent_at}</p>
 
     <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead style="background:#e2e8f0;color:#020617">
@@ -98,6 +119,7 @@ def _build_email_html(df: pd.DataFrame, sent_at: str) -> str:
                 <th style="padding:8px;">City</th>
                 <th style="padding:8px;">Inventory</th>
                 <th style="padding:8px;">Forecast</th>
+                <th style="padding:8px;">Severity</th>
                 <th style="padding:8px;">Flags</th>
             </tr>
         </thead>
@@ -105,6 +127,7 @@ def _build_email_html(df: pd.DataFrame, sent_at: str) -> str:
             {rows_html}
         </tbody>
     </table>
+    {overflow}
 
   </div>
 </body>

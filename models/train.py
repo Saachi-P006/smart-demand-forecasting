@@ -16,6 +16,7 @@ Changes vs previous version
 """
 
 import os
+import json
 import pickle
 import pandas as pd
 import numpy as np
@@ -92,6 +93,7 @@ TARGET_COL = "units_sold"
 
 MODEL_PATH    = os.path.join(os.path.dirname(__file__), "model.pkl")
 FEATURES_PATH = os.path.join(os.path.dirname(__file__), "feature_cols.pkl")
+METRICS_PATH  = os.path.join(os.path.dirname(__file__), "metrics.json")
 
 
 def get_available_features(df: pd.DataFrame) -> list:
@@ -106,22 +108,61 @@ def train_model(df: pd.DataFrame):
     Train XGBoost regression model to predict units_sold.
     Saves model + feature list to disk.
     Returns (model, feature_cols, eval_metrics).
+
+    CHANGES (time-based split + baseline comparison):
+    ───────────────────────────────────────────────────
+    1. TIME-BASED SPLIT (fixes a second, subtler leakage issue):
+       The old code used sklearn's train_test_split() with random shuffling.
+       For time-series forecasting, that lets the model "see" data from
+       AFTER the test period during training (e.g. train on day 200, test
+       on day 100) — which is unrealistic, since in production you only
+       ever have data from the past to predict the future. We now sort by
+       `date` and take the most recent ~20% of days as the test set, with
+       everything before that as train. This matches how the model would
+       actually be used in production.
+
+    2. BASELINE MODEL COMPARISON:
+       A model is only useful if it beats a naive baseline. We compute a
+       simple baseline forecast (predicting today's sales = rolling_avg_7,
+       i.e. "assume today looks like the last week's average") on the same
+       test set, and report its MAE/RMSE/MAPE alongside XGBoost's. This is
+       standard practice in forecasting projects and answers the "why
+       XGBoost and not something simpler?" question with evidence instead
+       of assumption.
     """
     feature_cols = get_available_features(df)
 
     if TARGET_COL not in df.columns:
         raise ValueError(f"Target column '{TARGET_COL}' not found in dataframe.")
 
+    if "date" not in df.columns:
+        raise ValueError(
+            "'date' column required for time-based train/test split. "
+            "Make sure it's preserved through preprocessing (see main.py)."
+        )
+
+    df = df.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.sort_values("date")
+
     X = df[feature_cols].copy()
     y = df[TARGET_COL].copy()
+    dates = df["date"]
 
-    mask = y.notna()
-    X, y = X[mask], y[mask]
+    mask = y.notna() & dates.notna()
+    X, y, dates = X[mask], y[mask], dates[mask]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-    print(f"[train] Train size: {len(X_train)} | Test size: {len(X_test)}")
+    # ── Time-based split: earliest ~80% of days = train, most recent ~20% = test
+    split_date = dates.quantile(0.8, interpolation="nearest")
+    train_mask = dates <= split_date
+    test_mask = ~train_mask
+
+    X_train, X_test = X[train_mask], X[test_mask]
+    y_train, y_test = y[train_mask], y[test_mask]
+
+    print(f"[train] Time-based split at {split_date.date()} — "
+          f"Train: {len(X_train):,} rows (up to {split_date.date()}) | "
+          f"Test: {len(X_test):,} rows (after {split_date.date()})")
 
     model = xgb.XGBRegressor(
         n_estimators=300,
@@ -151,7 +192,28 @@ def train_model(df: pd.DataFrame):
     mape = np.mean(np.abs((y_test - preds) / y_test.replace(0, np.nan))) * 100
 
     metrics = {"MAE": round(mae, 3), "RMSE": round(rmse, 3), "MAPE_%": round(mape, 2)}
-    print(f"\n[train] Evaluation Metrics → {metrics}")
+    print(f"\n[train] XGBoost Evaluation Metrics → {metrics}")
+
+    # ── Baseline comparison: naive "today = last 7-day average" forecast ──
+    baseline_col = "rolling_avg_7" if "rolling_avg_7" in df.columns else None
+    baseline_metrics = None
+    if baseline_col:
+        baseline_preds = df.loc[X_test.index, baseline_col].clip(lower=0)
+        b_mae  = mean_absolute_error(y_test, baseline_preds)
+        b_rmse = np.sqrt(mean_squared_error(y_test, baseline_preds))
+        b_mape = np.mean(np.abs((y_test - baseline_preds) / y_test.replace(0, np.nan))) * 100
+        baseline_metrics = {
+            "MAE": round(b_mae, 3), "RMSE": round(b_rmse, 3), "MAPE_%": round(b_mape, 2)
+        }
+        improvement = round((1 - mae / b_mae) * 100, 1) if b_mae > 0 else None
+        print(f"[train] Baseline (naive rolling-avg-7) Metrics → {baseline_metrics}")
+        print(f"[train] XGBoost improves on baseline MAE by {improvement}%"
+              if improvement is not None else
+              "[train] Could not compute improvement % (baseline MAE was 0)")
+        metrics["baseline"] = baseline_metrics
+        metrics["improvement_over_baseline_%"] = improvement
+    else:
+        print("[train] Skipped baseline comparison — rolling_avg_7 not found.")
 
     importance = pd.Series(model.feature_importances_, index=feature_cols)
     print("\n[train] Top 15 Feature Importances:")
@@ -161,6 +223,21 @@ def train_model(df: pd.DataFrame):
         pickle.dump(model, f)
     with open(FEATURES_PATH, "wb") as f:
         pickle.dump(feature_cols, f)
+
+    # ── Persist metrics + feature importance so the dashboard can show them ──
+    dashboard_metrics = {
+        "trained_at": pd.Timestamp.now().isoformat(),
+        "split_date": str(split_date.date()),
+        "train_rows": int(len(X_train)),
+        "test_rows": int(len(X_test)),
+        "xgboost": {"MAE": metrics["MAE"], "RMSE": metrics["RMSE"], "MAPE_%": metrics["MAPE_%"]},
+        "baseline": baseline_metrics,
+        "improvement_over_baseline_%": metrics.get("improvement_over_baseline_%"),
+        "feature_importance": importance.nlargest(15).round(4).to_dict(),
+    }
+    with open(METRICS_PATH, "w") as f:
+        json.dump(dashboard_metrics, f, indent=2)
+    print(f"[train] Metrics saved to {METRICS_PATH}")
 
     print(f"\n[train] Model saved to {MODEL_PATH}")
     return model, feature_cols, metrics

@@ -1,0 +1,84 @@
+date,event_name,event_type,city,impact_level
+2022-01-06,January White Sale,Retail_Promo,San Francisco,MEDIUM
+2022-01-15,January White Sale,Retail_Promo,Dallas,MEDIUM
+2022-01-20,January White Sale,Retail_Promo,San Francisco,MEDIUM
+2022-01-22,January White Sale,Retail_Promo,Seattle,MEDIUM
+2022-01-28,January White Sale,Retail_Promo,Miami,MEDIUM
+2022-01-31,January White Sale,Retail_Promo,New York,MEDIUM
+2022-05-04,Mother's Day,Holiday,Miami,MEDIUM
+2022-05-05,Mother's Day,Holiday,Miami,MEDIUM
+2022-05-06,Mother's Day,Holiday,Dallas,MEDIUM
+2022-05-08,Mother's Day,Holiday,Dallas,MEDIUM
+2022-05-21,Mother's Day,Holiday,Dallas,MEDIUM
+2022-05-23,Mother's Day,Holiday,Chicago,MEDIUM
+2022-05-25,Mother's Day,Holiday,Miami,MEDIUM
+2022-05-27,Mother's Day,Holiday,Chicago,MEDIUM
+2022-06-14,Wedding Registry Peak,Seasonal,Chicago,HIGH
+2022-07-14,Summer BBQ Event,Seasonal,Seattle,LOW
+2022-07-22,Summer BBQ Event,Seasonal,New York,LOW
+2022-07-24,Summer BBQ Event,Seasonal,Dallas,LOW
+2022-09-11,Labor Day Sale,Retail,San Francisco,MEDIUM
+2022-09-12,Labor Day Sale,Retail,Seattle,MEDIUM
+2022-09-23,Labor Day Sale,Retail,New York,MEDIUM
+2022-09-26,Labor Day Sale,Retail,Seattle,MEDIUM
+2022-11-28,Thanksgiving Prep,Seasonal_Food,New York,HIGH
+2022-11-29,Black Friday,Retail,Seattle,HIGH
+2022-12-02,Christmas,Holiday,New York,HIGH
+2022-12-09,Christmas,Holiday,Dallas,HIGH
+2022-12-14,Christmas,Holiday,New York,HIGH
+2022-12-17,Christmas,Holiday,Dallas,HIGH
+2022-12-26,Christmas,Holiday,Dallas,HIGH
+2023-01-02,January White Sale,Retail_Promo,San Francisco,MEDIUM
+2023-01-24,January White Sale,Retail_Promo,Miami,MEDIUM
+2023-01-26,January White Sale,Retail_Promo,Dallas,MEDIUM
+2023-05-01,Mother's Day,Holiday,Chicago,MEDIUM
+2023-05-14,Mother's Day,Holiday,Dallas,MEDIUM
+2023-05-20,Mother's Day,Holiday,Chicago,MEDIUM
+2023-05-30,Mother's Day,Holiday,Chicago,MEDIUM
+2023-06-28,Wedding Registry Peak,Seasonal,New York,HIGH
+2023-07-03,Summer BBQ Event,Seasonal,Dallas,LOW
+2023-07-05,Summer BBQ Event,Seasonal,New York,LOW
+2023-07-09,Summer BBQ Event,Seasonal,Miami,LOW
+2023-07-10,Summer BBQ Event,Seasonal,Dallas,LOW
+2023-07-17,Summer BBQ Event,Seasonal,Chicago,LOW
+2023-07-18,Summer BBQ Event,Seasonal,San Francisco,LOW
+2023-07-19,Summer BBQ Event,Seasonal,San Francisco,LOW
+2023-07-20,Summer BBQ Event,Seasonal,Seattle,LOW
+2023-09-07,Labor Day Sale,Retail,Miami,MEDIUM
+2023-09-13,Labor Day Sale,Retail,Miami,MEDIUM
+2023-09-19,Labor Day Sale,Retail,Miami,MEDIUM
+2023-09-20,Labor Day Sale,Retail,Chicago,MEDIUM
+2023-09-21,Labor Day Sale,Retail,New York,MEDIUM
+2023-09-25,Labor Day Sale,Retail,Chicago,MEDIUM
+2023-11-03,Black Friday,Retail,San Francisco,HIGH
+2023-11-07,Black Friday,Retail,New York,HIGH
+2023-11-08,Thanksgiving Prep,Seasonal_Food,Seattle,HIGH
+2023-11-11,Black Friday,Retail,San Francisco,HIGH
+2023-11-12,Black Friday,Retail,San Francisco,HIGH
+2023-11-22,Thanksgiving Prep,Seasonal_Food,Chicago,HIGH
+2023-12-16,Christmas,Holiday,Dallas,HIGH
+2023-12-18,Christmas,Holiday,New York,HIGH
+2023-12-19,Christmas,Holiday,San Francisco,HIGH
+2023-12-20,Christmas,Holiday,San Francisco,HIGH
+2023-12-22,Christmas,Holiday,Chicago,HIGH
+2023-12-23,Christmas,Holiday,San Francisco,HIGH
+2023-12-26,Christmas,Holiday,San Francisco,HIGH
+2024-01-12,January White Sale,Retail_Promo,Seattle,MEDIUM
+2024-01-20,January White Sale,Retail_Promo,Chicago,MEDIUM
+2024-01-24,January White Sale,Retail_Promo,New York,MEDIUM
+2024-01-25,January White Sale,Retail_Promo,Chicago,MEDIUM
+2024-01-29,January White Sale,Retail_Promo,Chicago,MEDIUM
+2024-05-16,Mother's Day,Holiday,New York,MEDIUM
+2024-05-30,Mother's Day,Holiday,Dallas,MEDIUM
+2024-06-09,Wedding Registry Peak,Seasonal,New York,HIGH
+2024-06-19,Wedding Registry Peak,Seasonal,San Francisco,HIGH
+2024-06-26,Wedding Registry Peak,Seasonal,Dallas,HIGH
+2024-06-29,Wedding Registry Peak,Seasonal,Dallas,HIGH
+2024-07-01,Summer BBQ Event,Seasonal,San Francisco,LOW
+2024-07-04,Summer BBQ Event,Seasonal,Miami,LOW
+2024-07-11,Summer BBQ Event,Seasonal,Dallas,LOW
+2024-07-13,Summer BBQ Event,Seasonal,Seattle,LOW
+2024-09-06,Labor Day Sale,Retail,Dallas,MEDIUM
+2024-09-12,Labor Day Sale,Retail,San Francisco,MEDIUM
+2024-09-20,Labor Day Sale,Retail,Chicago,MEDIUM
+2024-09-24,Labor Day Sale,Retail,Miami,MEDIUM

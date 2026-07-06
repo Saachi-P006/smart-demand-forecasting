@@ -1,0 +1,34 @@
+{
+  "trained_at": "2026-07-06T09:30:24.477104",
+  "split_date": "2023-10-20",
+  "train_rows": 160410,
+  "test_rows": 39590,
+  "xgboost": {
+    "MAE": 4.066,
+    "RMSE": 4.897,
+    "MAPE_%": 81.97
+  },
+  "baseline": {
+    "MAE": 4.407,
+    "RMSE": 5.368,
+    "MAPE_%": 86.36
+  },
+  "improvement_over_baseline_%": 7.7,
+  "feature_importance": {
+    "is_weekend": 0.46970000863075256,
+    "stockout_flag": 0.20200000703334808,
+    "day_of_week": 0.07779999822378159,
+    "display_flag": 0.010900000110268593,
+    "inventory_on_hand": 0.010700000450015068,
+    "promo_flag": 0.009100000374019146,
+    "page_views": 0.007400000002235174,
+    "price_discount_depth": 0.007300000172108412,
+    "event_flag": 0.007199999876320362,
+    "impact_score": 0.007199999876320362,
+    "promo_price": 0.0071000000461936,
+    "tariff_risk_flag": 0.0071000000461936,
+    "reorder_point": 0.007000000216066837,
+    "quarter": 0.007000000216066837,
+    "rolling_avg_7": 0.006899999920278788
+  }
+}
